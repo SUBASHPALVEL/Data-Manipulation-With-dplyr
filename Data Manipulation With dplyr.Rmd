@@ -1,0 +1,146 @@
+---
+title: "Data Manipulation With Dplyr"
+author: "Subash"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Installing dplyr
+```{r}
+#install.packages("dplyr")
+library(dplyr)
+```
+
+
+# Installing nycflights13
+This data is an RDMS: a Relational Database Management System, it is made up of more than one table of data which are related to each other.
+- flights
+- airlines
+- airport
+- planes
+- weather
+
+```{r}
+#install.packages("nycflights13)
+library(nycflights13)
+```
+
+
+## Flights (Main Data)
+Details of all flights in the year 2013
+```{r}
+head(flights)
+```
+
+
+## Airlines Names
+```{r}
+head(airlines)
+```
+
+## Airport Metadata
+```{r}
+head(airports)
+```
+
+## Planes Metadata
+```{r}
+head(planes)
+```
+
+## Weather (hourly)
+```{r}
+head(weather)
+?weather
+```
+
+#  Grouping and Summarizing
+
+```{r}
+month_delay <- flights |> 
+  group_by(month) |> 
+  summarize(avg_dep_delay = mean(dep_delay, na.rm = TRUE),
+            avg_arr_delay = mean(arr_delay, na.rm = TRUE))
+```
+
+```{r}
+carrier_delay <- flights |> 
+  group_by(carrier) |> 
+  summarize(avg_carr_dep_delay = mean(dep_delay, na.rm = TRUE),
+            avg_carr_arr_delay = mean(arr_delay, na.rm = TRUE))
+```
+
+# Arranging
+```{r}
+carrier_delay |> 
+  arrange(desc(avg_carr_dep_delay))
+```
+
+# Filtering
+```{r}
+flights |> 
+  filter(month == 1 & dep_delay < 0 & arr_delay < 0)
+
+carrier_delay
+```
+
+# Selecting
+```{r}
+flights |> 
+  select(!(hour:time_hour))
+```
+
+# Creating Variables
+```{r}
+carrier_speed <- flights |> 
+  mutate(speed = distance/(air_time/60)) |> 
+  select(carrier, speed) |> 
+  group_by(carrier) |> 
+  summarize(avg_speed = mean(speed, na.rm = TRUE)) |> 
+  arrange(desc(avg_speed))
+```
+
+
+```{r}
+flights |> 
+  mutate(speed = distance/(air_time/60), .keep = "all")
+```
+
+
+# Renaming
+```{r}
+flights |> 
+  rename(destination = dest)
+```
+
+# Mutating Joins
+```{r}
+top5_carrier_speed <- carrier_speed |> 
+  head(5)
+top5_carrier_speed
+```
+
+```{r}
+full_join(x = top5_carrier_speed, 
+           y = airlines, 
+           by = "carrier")
+
+inner_join(x = carrier_delay, 
+           y = airlines, 
+           by = "carrier") |> 
+  select(carrier, name, avg_carr_dep_delay, avg_carr_arr_delay) |> 
+  arrange(avg_carr_dep_delay) |> 
+  head(5)
+```
+
+```{r}
+inner_join(x = top5_carrier_speed, y = airlines, by = "carrier")
+```
+
+# Filtering Join
+```{r}
+anti_join(x = airlines,
+          y = top5_carrier_speed,
+          by = "carrier")
+```
